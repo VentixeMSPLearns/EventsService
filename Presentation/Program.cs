@@ -20,7 +20,8 @@ builder.Services.AddCors(options =>
 
 
  builder.Services.AddDbContext<DataContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnectionEvents")));
+
 builder.Services.AddScoped<DataContext>();
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IEventService, EventService>();
