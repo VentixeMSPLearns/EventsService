@@ -74,10 +74,70 @@ public class EventRepository : IEventRepository
             };
         }
     }
+
+    public async Task<Result<EventEntity>> UpdateAvailableTicketsAsync(string eventId, int newAvailableTickets)
+    {
+        try
+        {
+            var rowsAffected = await _events
+                .Where(e => e.Id == eventId)
+                .ExecuteUpdateAsync(e => e
+                    .SetProperty(e => e.AvailableTickets, newAvailableTickets));
+
+            if (rowsAffected > 0)
+            {
+                return new Result<EventEntity> { Success = true };
+            }
+            else
+            {
+                return new Result<EventEntity>
+                {
+                    Success = false,
+                    ErrorMessage = "No changes were saved to the database."
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            return new Result<EventEntity>
+            {
+                Success = false,
+                ErrorMessage = $"An error occurred while updating available tickets: {ex.Message}"
+            };
+        }
+    }
+
+    public async Task<Result<IEnumerable<EventEntity>>> GetEventsByIdListAsync(List<string> eventIds)
+    {
+        try
+        {
+            var entities = await _events
+                .Where(e => eventIds.Contains(e.Id)) //Checks if the event e Id is in the provided list of eventIds
+                .ToListAsync();
+
+            if (entities == null || entities.Count == 0)
+            {
+                return new Result<IEnumerable<EventEntity>>
+                {
+                    Success = false,
+                    ErrorMessage = "No events found for the provided IDs."
+                };
+            }
+
+            return new Result<IEnumerable<EventEntity>>
+            {
+                Success = true,
+                Data = entities
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Result<IEnumerable<EventEntity>>
+            {
+                Success = false,
+                ErrorMessage = $"An error occurred while fetching events: {ex.Message}"
+            };
+        }
+    }
 }
 
-public interface IEventRepository
-{
-    Task<Result<IEnumerable<EventEntity>>> GetAllEventsAsync();
-    Task<Result<EventEntity>> GetEventByIdAsync(string id);
-}

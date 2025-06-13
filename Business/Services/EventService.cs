@@ -6,11 +6,7 @@ using Data.Repositories;
 
 namespace Business.Services;
 
-public interface IEventService
-{
-    Task<Result<IEnumerable<EventModel>>> GetAllEventsAsync();
-    Task<Result<EventModel>> GetEventByIdAsync(string id);
-}
+
 
 public class EventService(IEventRepository eventRepository) : IEventService
 {
@@ -53,6 +49,61 @@ public class EventService(IEventRepository eventRepository) : IEventService
             ErrorMessage = result.ErrorMessage
         };
     }
+
+    public async Task<Result<EventModel?>> UpdateAvailableTicketsAsync(string eventId, int newAvailableTickets)
+    {
+        try
+        {
+            var result = await _eventRepository.UpdateAvailableTicketsAsync(eventId, newAvailableTickets);
+            if (result.Success)
+            {
+                return new Result<EventModel?>
+                {
+                    Success = true,
+                    Data = await GetEventByIdAsync(eventId).ContinueWith(t => t.Result.Data)
+                };
+            }
+            return new Result<EventModel?>
+            {
+                Success = false,
+                ErrorMessage = $"An error occurred while updating event's available tickets: {result.ErrorMessage}"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new Result<EventModel?>
+            {
+                Success = false,
+                ErrorMessage = $"An error occurred while updating event's available tickets: {ex.Message}"
+            };
+        }
+    }
+
+    public async Task<Result<IEnumerable<EventModel>>> GetEventsByIdListAsync(List<string> eventIds)
+    {
+        var result = await _eventRepository.GetEventsByIdListAsync(eventIds);
+        if (result.Success && result.Data != default)
+        {
+            var models = result.Data
+                .Select(entity => MapEntityToModel(entity)!)
+                .ToList();
+
+            return new Result<IEnumerable<EventModel>>
+            {
+                Success = true,
+                Data = models
+            };
+        }
+
+        return new Result<IEnumerable<EventModel>>
+        {
+            Success = false,
+            ErrorMessage = result.ErrorMessage
+        };
+    }
+
+
+
 
     public static EventModel? MapEntityToModel(EventEntity entity)
     {
